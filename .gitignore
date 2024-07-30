@@ -139,4 +139,4 @@ dmypy.json
 .vscode/
 .directory
 muni/
-
+*.txt
