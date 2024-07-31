@@ -21,28 +21,17 @@ merged_df = df1.merge(df2, on=['codigo','nombreaccion', 'nombremetodo'], how='ou
 
 
 # Agrupar por 'codigo' y luego por '_merge'
-grouped = merged_df.groupby(['codigo', '_merge'])
+grouped = merged_df.groupby(['codigo', '_merge'], observed=True)
 
 # Mostrar la información agrupada
 for (codigo, merge_type), group in grouped:
     if merge_type=='both':
         continue
     if merge_type=='right_only':
-        origen='testing'
+        origen='solo en testing'
     if merge_type=='left_only':
-        origen='produccion'        
+        origen='solo en produccion'        
     print(f"Rol: {codigo}, Origen: {origen}")
     print(group[['nombreaccion', 'nombremetodo']])
     print()
-
-
-
-# Mostrar los resultados
-
-# print(only_in_df1[['codigo','nombreaccion', 'nombremetodo']])
-
-
-# print(only_in_df2[['codigo','nombreaccion', 'nombremetodo']])
-
-
 
