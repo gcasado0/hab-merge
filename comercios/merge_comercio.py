@@ -1,34 +1,46 @@
+"""
+Este script realiza la consolidación de datos de comercios a partir de un archivo CSV.
+
+Pasos realizados:
+1. Registra la fecha y hora de inicio del proceso.
+2. Lee un archivo CSV que contiene información sobre comercios y convierte ciertas columnas a tipo numérico.
+3. Imprime las primeras filas y la información del DataFrame para verificar la carga de datos.
+4. Define las columnas que se van a concatenar, excluyendo la columna 'id'.
+5. Agrupa las filas por 'id' y concatena los valores únicos de las columnas seleccionadas, separándolos por ' | '.
+6. Guarda el DataFrame consolidado en un archivo Excel.
+7. Registra la fecha y hora de finalización del proceso.
+
+Dependencias:
+- pandas: Para la manipulación de datos.
+- datetime: Para el manejo de fechas y horas.
+
+Uso:
+Ejecutar el script en un entorno donde se tenga acceso al archivo CSV especificado y se desee generar un archivo Excel consolidado.
+"""
 import pandas as pd
+from datetime import datetime
 
-#Leo archivo original
-usuarios_0 = pd.read_csv('comercios/usuarios_202407251030.csv')
-usuarios_0.rename(columns={'usuario': 'username'}, inplace=True)
-usuarios_0['username'] = usuarios_0['username'].str.strip()
-usuarios_0['nombre'] = usuarios_0['nombre'].str.strip()
-usuarios_0['apellido'] = usuarios_0['apellido'].str.strip()
-print(usuarios_0.head())
-
-roles_0 = pd.read_csv('usuario_rol/usuarios_roles_202407251033.csv')
-roles_0['username'] = roles_0['username'].str.strip()
-print(roles_0.head())
-
-# Verificar si la columna 'username' está presente en ambos DataFrames
-if 'username' in usuarios_0.columns and 'username' in roles_0.columns:
-    unificado = pd.merge(usuarios_0, roles_0, on='username', how='left')
-    print("Unificado:")
-    print(unificado.head())
-    unificado.to_csv("usuario_rol/unificado.csv")
-
-    # Definir las columnas del segundo archivo
-    columns_to_concatenate = roles_0.columns.difference(['username'])
-
-    # Agrupar y concatenar
-    unificado_agrupado = unificado.groupby('username').agg(lambda x: ' | '.join(x.astype(str)) if x.name in columns_to_concatenate else x.iloc[0]).reset_index()
-
-    # Guardar el resultado
-    unificado_agrupado.to_excel("usuario_rol/usuarios_area_roles.xlsx", index=False)
+# Registrar fecha y hora de inicio
+start_time = datetime.now()
+print(f"Inicio del proceso: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 
-else:
-    print("La columna 'username' no se encuentra en uno o ambos DataFrames")
+#Leo archivo de comercios
+data_0 = pd.read_csv('comercios/comercios_202409111429_prod_comercio.csv', dtype=str)
+data_0[['sup_construida', 'sup_total']] = data_0[['sup_construida', 'sup_total']].apply(pd.to_numeric, errors='coerce')
+print(data_0.head())
+print(data_0.info())
 
+# Definir las columnas a concatenar
+columns_to_concatenate = data_0.columns.difference(['id'])
+
+# Agrupar filas por comercio_id y concatenar los valores de las columnas
+#consolidado = data_0.groupby('id').agg(lambda x: ' | '.join(x.astype(str).unique().str.strip()) if x.name in columns_to_concatenate else x.iloc[0]).reset_index()
+consolidado = data_0.groupby('id').agg(lambda x: ' | '.join(pd.Series(x.astype(str).unique()).str.strip()) if x.name in columns_to_concatenate else x.iloc[0]).reset_index()
+
+# Guardar el resultado
+consolidado.to_excel("comercios/consolidado.xlsx", index=False)
+
+# Registrar fecha y hora de fin
+end_time = datetime.now()
+print(f"Fin del proceso: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
