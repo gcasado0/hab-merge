@@ -27,7 +27,6 @@ print(f"Inicio del proceso: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 #Leo archivo de comercios
 data_0 = pd.read_csv('comercios/comercios_202409111429_prod_comercio.csv', dtype=str)
-data_0[['sup_construida', 'sup_total']] = data_0[['sup_construida', 'sup_total']].apply(pd.to_numeric, errors='coerce')
 print(data_0.head())
 print(data_0.info())
 
@@ -35,7 +34,6 @@ print(data_0.info())
 columns_to_concatenate = data_0.columns.difference(['id'])
 
 # Agrupar filas por comercio_id y concatenar los valores de las columnas
-#consolidado = data_0.groupby('id').agg(lambda x: ' | '.join(x.astype(str).unique().str.strip()) if x.name in columns_to_concatenate else x.iloc[0]).reset_index()
 consolidado = data_0.groupby('id').agg(lambda x: ' | '.join(pd.Series(x.astype(str).unique()).str.strip()) if x.name in columns_to_concatenate else x.iloc[0]).reset_index()
 
 # Guardar el resultado
