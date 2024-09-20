@@ -17,16 +17,34 @@ Dependencias:
 Uso:
 Ejecutar el script en un entorno donde se tenga acceso al archivo CSV especificado y se desee generar un archivo Excel consolidado.
 """
-import pandas as pd
+import os
 from datetime import datetime
+import numpy as np
+import pandas as pd
 
 # Registrar fecha y hora de inicio
 start_time = datetime.now()
 print(f"Inicio del proceso: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
+# Directorio donde se encuentran los archivos
+directory = 'comercios/'
+
+# Obtener la lista de archivos .csv ordenada alfabéticamente
+csv_files = sorted([f for f in os.listdir(directory) if f and f.endswith('.csv')])
+
+# Verificar si hay archivos .csv en el directorio
+if csv_files:
+    # Seleccionar el último archivo en orden alfabético
+    latest_file = csv_files[-1]
+    # Leer el archivo CSV
+    data_0 = pd.read_csv(os.path.join(directory, latest_file), dtype=str)
+    print(f"Archivo seleccionado: {latest_file}")
+else:
+    print("No se encontraron archivos .csv en el directorio.")
+    exit()
 
 #Leo archivo de comercios
-data_0 = pd.read_csv('comercios/comercios_202409111429_prod_comercio.csv', dtype=str)
+
 print(data_0.head())
 print(data_0.info())
 
@@ -35,6 +53,21 @@ columns_to_concatenate = data_0.columns.difference(['id'])
 
 # Agrupar filas por comercio_id y concatenar los valores de las columnas
 consolidado = data_0.groupby('id').agg(lambda x: ' | '.join(pd.Series(x.astype(str).unique()).str.strip()) if x.name in columns_to_concatenate else x.iloc[0]).reset_index()
+
+# Agregar la columna 'habilitacion' con la condición
+# consolidado['habilitacion'] = np.where(consolidado['permiso'].str.contains(' - VIGENTE'), 'HabVigente', 'HabVencida')
+
+# Condiciones
+condiciones = [
+    (consolidado['permiso'].str.contains(' - VIGENTE') & consolidado['permiso'].str.contains('PERPETUO')),  # Vigente y Perpetuo
+    (consolidado['permiso'].str.contains(' - VIGENTE')),  # Solo vigente
+]
+
+# Valores a asignar según la condición
+valores = ['HabSinVto', 'HabVigente']
+
+# Asignar 'HabSinVto' si es vigente y contiene 'PERPETUO', 'HabVigente' si solo es vigente, y 'HabVencida' en caso contrario
+consolidado['habilitacion'] = np.select(condiciones, valores, default='HabVencida')
 
 # Guardar el resultado
 consolidado.to_excel("comercios/consolidado.xlsx", index=False)
