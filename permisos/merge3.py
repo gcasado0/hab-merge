@@ -8,7 +8,7 @@ def get_idaccmodapl(nombreaccion, nombremetodo):
     FROM swe:informix.swe_accmodapl
     WHERE idaplicacion =12;
     """
-    acciones = pd.read_csv('permisos/acciones_202503051124_test_swe.csv')
+    acciones = pd.read_csv('permisos/datos/acciones_202503051124_test_swe.csv')
     acciones = acciones[(acciones['nombreaccion'] == nombreaccion) & (acciones['nombremetodo'] == nombremetodo)]
     if len(acciones) == 1:
         return acciones['id'].values[0]
@@ -17,8 +17,8 @@ def get_idaccmodapl(nombreaccion, nombremetodo):
 
 # Leer el archivo CSV y seleccionar solo las columnas "nombreaccion" y "nombremetodo"
 
-df1 = pd.read_csv('/home/gcasado0/proyectos/hab-utilities/hab-merge/permisos/AdministrativoNivel2_202503051021_prod_swe.csv', usecols=['nombreaccion', 'nombremetodo'])
-df2 = pd.read_csv('/home/gcasado0/proyectos/hab-utilities/hab-merge/permisos/AdministrativoNivel2_202503051155_test_swe.csv', usecols=['nombreaccion', 'nombremetodo'])
+df1 = pd.read_csv('permisos/datos/Jefe_202503051320_prod_swe.csv', usecols=['nombreaccion', 'nombremetodo'])
+df2 = pd.read_csv('permisos/datos/AdministrativoNivel2_202503051021_prod_swe.csv', usecols=['nombreaccion', 'nombremetodo'])
 
 # Eliminar espacios en blanco en los campos
 df1 = df1.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
@@ -51,11 +51,10 @@ grouped = merged_df.groupby(['_merge'], observed=True)
 
 # borrar archivo sql
 with open('permisos/sincronizar.sql', 'w') as f:
-    f.write('')
-    f.write('\n')
+    f.write('')    
 
 origen=""
-rol_testing = 416
+rol_testing = 414
 # Mostrar la información agrupada
 for (merge_type,), group in grouped:
     if merge_type=='both':
@@ -72,12 +71,11 @@ for (merge_type,), group in grouped:
                 continue
             sql = f"""DELETE FROM swe:informix.swe_rolaccmodapl
             WHERE idaccmodapl = {idaccmodapl} AND idrolapl = {rol_testing};"""
-            print(sql)
+            # print(sql)
             # guardar en archivo sql
             with open('permisos/sincronizar.sql', 'a') as f:
                 f.write(sql)
-                f.write('\n')
-            print()
+                f.write('\n')            
 
     if merge_type=='left_only':
         origen='solo en produccion'     
@@ -92,9 +90,9 @@ for (merge_type,), group in grouped:
             sql = f"""INSERT INTO swe:informix.swe_rolaccmodapl
             (id, idaccmodapl, idrolapl, usuario, fechaultmdf, estado)
             VALUES (0, {idaccmodapl}, {rol_testing}, 'gcasado0', CURRENT YEAR TO second, 1);"""
-            print(sql)
+            # print(sql)
             # guardar en archivo sql
             with open('permisos/sincronizar.sql', 'a') as f:
                 f.write(sql)
                 f.write('\n')
-            print()
+            
