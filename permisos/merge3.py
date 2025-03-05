@@ -1,17 +1,43 @@
 import pandas as pd
 
+
+def get_idaccmodapl(nombreaccion, nombremetodo):
+    # Consulta a la base de datos para obtener el idaccmodapl
+    """
+    SELECT id, idaplicacion, idmodapl, descripcion, nombreaccion, nombremetodo, usuario, fechaultmdf, estado
+    FROM swe:informix.swe_accmodapl
+    WHERE idaplicacion =12;
+    """
+    acciones = pd.read_csv('permisos/acciones_202503051124_test_swe.csv')
+    acciones = acciones[(acciones['nombreaccion'] == nombreaccion) & (acciones['nombremetodo'] == nombremetodo)]
+    if len(acciones) == 1:
+        return acciones['id'].values[0]
+    else:
+        return None
+
 # Leer el archivo CSV y seleccionar solo las columnas "nombreaccion" y "nombremetodo"
 
-df1 = pd.read_csv('/home/gcasado0/proyectos/hab-utilities/hab-merge/permisos/permisos_prod_swe.csv', usecols=['codigo','nombreaccion', 'nombremetodo'])
-df2 = pd.read_csv('/home/gcasado0/proyectos/hab-utilities/hab-merge/permisos/permisos_test_swe.csv', usecols=['codigo','nombreaccion', 'nombremetodo'])
+df1 = pd.read_csv('/home/gcasado0/proyectos/hab-utilities/hab-merge/permisos/AdministrativoNivel2_202503051021_prod_swe.csv', usecols=['nombreaccion', 'nombremetodo'])
+df2 = pd.read_csv('/home/gcasado0/proyectos/hab-utilities/hab-merge/permisos/AdministrativoNivel2_202503051155_test_swe.csv', usecols=['nombreaccion', 'nombremetodo'])
 
 # Eliminar espacios en blanco en los campos
 df1 = df1.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 df2 = df2.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 
+# mostrar registros duplicados
+duplicates_df1 = df1[df1.duplicated()]
+duplicates_df2 = df2[df2.duplicated()]
+if len(duplicates_df1) > 0:
+    print('Registros duplicados en df1:')
+    print(duplicates_df1)
+    print() 
+if len(duplicates_df2) > 0:
+    print('Registros duplicados en df2:')
+    print(duplicates_df2)
+    print()
 
 # Merge los DataFrames con indicador
-merged_df = df1.merge(df2, on=['codigo','nombreaccion', 'nombremetodo'], how='outer', indicator=True)
+merged_df = df1.merge(df2, on=['nombreaccion', 'nombremetodo'], how='outer', indicator=True)
 
 # Filtrar registros que están solo en df1
 #only_in_df1 = merged_df[merged_df['_merge'] == 'left_only']
@@ -21,17 +47,54 @@ merged_df = df1.merge(df2, on=['codigo','nombreaccion', 'nombremetodo'], how='ou
 
 
 # Agrupar por 'codigo' y luego por '_merge'
-grouped = merged_df.groupby(['codigo', '_merge'], observed=True)
+grouped = merged_df.groupby(['_merge'], observed=True)
 
+# borrar archivo sql
+with open('permisos/sincronizar.sql', 'w') as f:
+    f.write('')
+    f.write('\n')
+
+origen=""
+rol_testing = 416
 # Mostrar la información agrupada
-for (codigo, merge_type), group in grouped:
+for (merge_type,), group in grouped:
     if merge_type=='both':
         continue
     if merge_type=='right_only':
         origen='solo en testing'
-    if merge_type=='left_only':
-        origen='solo en produccion'        
-    print(f"Rol: {codigo}, Origen: {origen}")
-    print(group[['nombreaccion', 'nombremetodo']])
-    print()
+        print(f"Origen: {origen}")    
+        print(group[['nombreaccion', 'nombremetodo']])
+        # generar sql para eliminar acciones
+        for index, row in group.iterrows():
+            idaccmodapl = get_idaccmodapl(row['nombreaccion'], row['nombremetodo'])
+            if idaccmodapl is None:
+                print(f"Error: No se encontró el idaccmodapl para la acción {row['nombreaccion']} - {row['nombremetodo']}")
+                continue
+            sql = f"""DELETE FROM swe:informix.swe_rolaccmodapl
+            WHERE idaccmodapl = {idaccmodapl} AND idrolapl = {rol_testing};"""
+            print(sql)
+            # guardar en archivo sql
+            with open('permisos/sincronizar.sql', 'a') as f:
+                f.write(sql)
+                f.write('\n')
+            print()
 
+    if merge_type=='left_only':
+        origen='solo en produccion'     
+        # generar sql para insertar nuevas acciones
+        print(f"Origen: {origen}")    
+        print(group[['nombreaccion', 'nombremetodo']])
+        for index, row in group.iterrows():
+            idaccmodapl = get_idaccmodapl(row['nombreaccion'], row['nombremetodo'])
+            if idaccmodapl is None:
+                print(f"Error: No se encontró el idaccmodapl para la acción {row['nombreaccion']} - {row['nombremetodo']}")
+                continue
+            sql = f"""INSERT INTO swe:informix.swe_rolaccmodapl
+            (id, idaccmodapl, idrolapl, usuario, fechaultmdf, estado)
+            VALUES (0, {idaccmodapl}, {rol_testing}, 'gcasado0', CURRENT YEAR TO second, 1);"""
+            print(sql)
+            # guardar en archivo sql
+            with open('permisos/sincronizar.sql', 'a') as f:
+                f.write(sql)
+                f.write('\n')
+            print()
