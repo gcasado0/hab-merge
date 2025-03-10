@@ -16,9 +16,11 @@ def get_idaccmodapl(nombreaccion, nombremetodo):
         return None
 
 # Leer el archivo CSV y seleccionar solo las columnas "nombreaccion" y "nombremetodo"
+archivo_rol1='permisos/datos/AdministrativoNivel1_202503101320_prod_swe.csv'
+archivo_rol2='permisos/datos/ConsultaNivel3_202503101207_prod_swe.csv'
 
-df1 = pd.read_csv('permisos/datos/Jefe_202503051320_prod_swe.csv', usecols=['nombreaccion', 'nombremetodo'])
-df2 = pd.read_csv('permisos/datos/AdministrativoNivel2_202503051021_prod_swe.csv', usecols=['nombreaccion', 'nombremetodo'])
+df1 = pd.read_csv(archivo_rol1, usecols=['nombreaccion', 'nombremetodo'])
+df2 = pd.read_csv(archivo_rol2, usecols=['nombreaccion', 'nombremetodo'])
 
 # Eliminar espacios en blanco en los campos
 df1 = df1.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
@@ -61,7 +63,7 @@ for (merge_type,), group in grouped:
         continue
     if merge_type=='right_only':
         origen='solo en testing'
-        print(f"Origen: {origen}")    
+        print(f"Origen: Solo en {archivo_rol2}")
         print(group[['nombreaccion', 'nombremetodo']])
         # generar sql para eliminar acciones
         for index, row in group.iterrows():
@@ -80,7 +82,7 @@ for (merge_type,), group in grouped:
     if merge_type=='left_only':
         origen='solo en produccion'     
         # generar sql para insertar nuevas acciones
-        print(f"Origen: {origen}")    
+        print(f"Origen: Solo en {archivo_rol1}")    
         print(group[['nombreaccion', 'nombremetodo']])
         for index, row in group.iterrows():
             idaccmodapl = get_idaccmodapl(row['nombreaccion'], row['nombremetodo'])
