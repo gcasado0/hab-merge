@@ -16,6 +16,16 @@ def get_idaccmodapl(nombreaccion, nombremetodo):
         return None
 
 # Leer el archivo CSV y seleccionar solo las columnas "nombreaccion" y "nombremetodo"
+
+"""select r.id, r.idaccmodapl, r.idrolapl, a.id, a.idaplicacion, a.idmodapl, a.nombreaccion, a.nombremetodo,r.usuario
+from swe_rolaccmodapl r
+join informix.swe_accmodapl a on   a.id = r.idaccmodapl
+join swe:informix.swe_rolapl ra on r.idrolapl = ra.id
+where ra.idaplicacion = 12
+AND r.estado = 1
+and  ra.codigo = 'Coordinador'
+order by nombreaccion;"""
+
 archivo_rol1='permisos/datos/AdministrativoNivel1_202503101320_prod_swe.csv'
 archivo_rol2='permisos/datos/ConsultaNivel3_202503101207_prod_swe.csv'
 
