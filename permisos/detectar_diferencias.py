@@ -25,8 +25,8 @@ where ra.idaplicacion = 12
 AND r.estado = 1
 order by ra.codigo, nombreaccion;"""
 
-archivo_rol_prod='permisos/datos/permisos_prod_swe.csv'
-archivo_rol_test='permisos/datos/permisos_test_swe.csv'
+archivo_rol_prod='permisos/datos/permisos_202508291206_prod_swe.csv'
+archivo_rol_test='permisos/datos/permisos_202508291205_test_swe.csv'
 
 df_prod = pd.read_csv(archivo_rol_prod, usecols=['codigo','nombreaccion', 'nombremetodo'])
 df_test = pd.read_csv(archivo_rol_test, usecols=['codigo','nombreaccion', 'nombremetodo'])
