@@ -1,4 +1,5 @@
 import pandas as pd
+from datetime import datetime
 
 
 def get_idaccmodapl(nombreaccion, nombremetodo):
@@ -25,8 +26,8 @@ where ra.idaplicacion = 12
 AND r.estado = 1
 order by ra.codigo, nombreaccion;"""
 
-archivo_rol_prod='permisos/datos/permisos_202508291206_prod_swe.csv'
-archivo_rol_test='permisos/datos/permisos_202508291205_test_swe.csv'
+archivo_rol_prod='permisos/datos/permisos_202509161006_prod_swe.csv'
+archivo_rol_test='permisos/datos/permisos_202509161005_test_swe.csv'
 
 df_prod = pd.read_csv(archivo_rol_prod, usecols=['codigo','nombreaccion', 'nombremetodo'])
 df_test = pd.read_csv(archivo_rol_test, usecols=['codigo','nombreaccion', 'nombremetodo'])
@@ -50,8 +51,13 @@ if len(duplicates_df_test) > 0:
 # Merge los DataFrames con indicador
 merged_df = df_prod.merge(df_test, on=['codigo', 'nombreaccion', 'nombremetodo'], how='outer', indicator=True)
 
-#guardar en excel merge_df
-merged_df.to_excel('permisos/datos/merge_df.xlsx', index=False)
+# guardar en excel merge_df
+# crear nombre del archivo 'diferencias_yymmddhhmmss.xlsx'
+
+timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+file_name = f'permisos/datos/diferencias_{timestamp}.xlsx'
+
+merged_df.to_excel(file_name, index=False)
 
 
 # Filtrar registros que están solo en df1
